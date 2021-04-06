@@ -13,15 +13,15 @@ import (
 // 测试的配置文件为格式为：
 // "{\"servers\":[\"localhost:2181\"],\"username\":\"guest\",\"password\":\"guest\"}"
 func main() {
+	go zk()
+	go etcd()
 	makeUaf()
-	zk()
-	etcd()
 }
 
 func zk() {
 	zkChange()
 	for {
-		s, err := configuration.DefaultEngine().String("base", "cache", "", "provider")
+		s, err := configuration.DefaultEngine().String("myconf", "base", "cache", "", "provider")
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -36,8 +36,8 @@ func etcd() {
 	etcdChange()
 	for {
 		s, err := configuration.
-			EtcdEngine(configuration.NewStoreConfig()).
-			String("base", "cache", "", "provider")
+			EtcdEngine(configuration.NewStoreConfig("")).
+			String("myconf", "base", "cache", "", "provider")
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -50,7 +50,7 @@ func etcd() {
 
 type ProviderConfig struct {
 	Host     string `json:"host"`
-	Port     int    `json:"port"`
+	Port     string `json:"port"`
 	Password string `json:"password"`
 }
 
@@ -59,19 +59,19 @@ var providerCfg *ProviderConfig
 func zkChange() {
 	providerCfg = &ProviderConfig{}
 	eng := configuration.DefaultEngine()
-	if s, err := eng.String("base", "cache", "", "provider"); err != nil {
+	if s, err := eng.String("myconf", "base", "cache", "", "provider"); err != nil {
 		_ = json.Unmarshal([]byte(s), providerCfg)
 	}
-	eng.Get("base", "cache", "", []string{"provider"}, &providerParser{})
+	eng.Get("myconf", "base", "cache", "", []string{"provider"}, &providerParser{})
 }
 
 func etcdChange() {
 	providerCfg = &ProviderConfig{}
-	eng := configuration.EtcdEngine(configuration.NewStoreConfig())
-	if s, err := eng.String("base", "cache", "", "provider"); err != nil {
+	eng := configuration.EtcdEngine(configuration.NewStoreConfig(""))
+	if s, err := eng.String("myconf", "base", "cache", "", "provider"); err != nil {
 		_ = json.Unmarshal([]byte(s), providerCfg)
 	}
-	eng.Get("base", "cache", "", []string{"provider"}, &providerParser{})
+	eng.Get("myconf", "base", "cache", "", []string{"provider"}, &providerParser{})
 }
 
 type providerParser struct {
@@ -95,7 +95,7 @@ func (t *providerParser) Changed(data map[string]string) {
 
 func makeUaf() {
 	key := "12345678"
-	src := "{\"servers\":[\"localhost:2379\"],\"username\":\"guest\",\"password\":\"guest\"}"
+	src := "{\"servers\":[\"localhost:2181\"],\"username\":\"guest\",\"password\":\"guest\"}"
 	fmt.Println("原文：" + src)
 	enc, _ := gutil.Encrypt([]byte(src), []byte(key))
 	_ = ioutil.WriteFile("configuration.uaf", []byte(base64.URLEncoding.EncodeToString(enc)), 0644)

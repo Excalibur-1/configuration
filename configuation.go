@@ -13,35 +13,33 @@ import (
 	"strings"
 )
 
-const (
-	Namespace = "/myconf"
-)
-
 type Configuration interface {
-	Values(app, group, tag string, path []string) (map[string]string, error)
-	String(app, group, tag, path string) (string, error)
-	Clazz(app, group, tag, path string, clazz interface{}) error
-	Get(app, group, tag string, path []string, parser ChangedListener)
+	Values(namespace, app, group, tag string, path []string) (map[string]string, error)
+	String(namespace, app, group, tag, path string) (string, error)
+	Clazz(namespace, app, group, tag, path string, clazz interface{}) error
+	Get(namespace, app, group, tag string, path []string, parser ChangedListener)
 }
 
 type configuration struct {
 	store StoreClient
 }
 
+// DefaultEngine 默认采用zk配置中心且uaf环境变量设置为：UAF
 func DefaultEngine() Configuration {
-	return ZkEngine(NewStoreConfig())
+	return ZkEngine(NewStoreConfig(""))
 }
 
-func MockEngine(conf StoreConfig) Configuration {
-	fmt.Println("Loading FoChange configuration Mock ZkEngine ver:1.0.0")
-	store, err := NewMockClient(conf.Exp)
+// MockEngine 本地mock一个配置
+func MockEngine(conf map[string]string) Configuration {
+	fmt.Println("Loading configuration MockEngine ver:1.0.0")
+	store, err := NewMockClient(conf)
 	if err != nil {
 		panic(err)
 	}
-	return &configuration{store}
+	return &configuration{store: store}
 }
 
-// ZkEngine 获取配置管理引擎的唯一实例。
+// ZkEngine 获取zk配置管理引擎的唯一实例。
 func ZkEngine(conf StoreConfig) Configuration {
 	fmt.Println("Loading configuration ZkEngine ver:1.0.0")
 	store, err := NewZkClient(conf.Servers, conf.Username, conf.Password, conf.OpenUser, conf.OpenPassword)
@@ -51,8 +49,9 @@ func ZkEngine(conf StoreConfig) Configuration {
 	return &configuration{store: store}
 }
 
+// EtcdEngine 获取etcd配置管理引擎的唯一实例。
 func EtcdEngine(conf StoreConfig) Configuration {
-	fmt.Println("Loading configuration ZkEngine ver:1.0.0")
+	fmt.Println("Loading configuration EtcdEngine ver:1.0.0")
 	store, err := NewEtcdClient(conf.Servers, conf.Username, conf.Password)
 	if err != nil {
 		panic(err)
@@ -61,10 +60,10 @@ func EtcdEngine(conf StoreConfig) Configuration {
 }
 
 // Values 获取多个配置项的配置信息，返回原始的配置数据格式(map集合)，如果获取失败则抛出异常。
-func (c configuration) Values(app, group, tag string, path []string) (map[string]string, error) {
+func (c configuration) Values(namespace, app, group, tag string, path []string) (map[string]string, error) {
 	_path := make([]string, len(path))
 	for i, v := range path {
-		_path[i] = c.maskPath(app, group, tag, v)
+		_path[i] = c.maskPath(namespace, app, group, tag, v)
 	}
 	vl, err := c.store.GetValues(_path)
 	if err != nil {
@@ -76,8 +75,8 @@ func (c configuration) Values(app, group, tag string, path []string) (map[string
 }
 
 // String 获取指定配置项的配置信息，返回原始的配置数据格式，如果获取失败则抛出异常。
-func (c configuration) String(app, group, tag, path string) (string, error) {
-	path = c.maskPath(app, group, tag, path)
+func (c configuration) String(namespace, app, group, tag, path string) (string, error) {
+	path = c.maskPath(namespace, app, group, tag, path)
 	vl, err := c.store.GetValues([]string{path})
 	if err != nil {
 		log.Printf("获取多个配置项[%s]的配置信息出错\n", path)
@@ -88,8 +87,8 @@ func (c configuration) String(app, group, tag, path string) (string, error) {
 }
 
 // Clazz 获取指定配置项的配置信息，并且将配置信息（JSON格式的）转换为指定的Go结构体，如果获取失败或转换失败则抛出异常。
-func (c configuration) Clazz(app, group, tag, path string, clazz interface{}) error {
-	path = c.maskPath(app, group, tag, path)
+func (c configuration) Clazz(namespace, app, group, tag, path string, clazz interface{}) error {
+	path = c.maskPath(namespace, app, group, tag, path)
 	vl, err := c.store.GetValues([]string{path})
 	if err != nil {
 		log.Printf("获取多个配置项[%s]的配置信息出错:%+v\n", path, err)
@@ -102,10 +101,10 @@ func (c configuration) Clazz(app, group, tag, path string, clazz interface{}) er
 }
 
 // Get 获取指定路径下的配置信息，并实现监听，当有数据变化时自动调用解析器进行解析。
-func (c configuration) Get(app, group, tag string, path []string, parser ChangedListener) {
+func (c configuration) Get(namespace, app, group, tag string, path []string, parser ChangedListener) {
 	_path := make([]string, len(path))
 	for i, v := range path {
-		_path[i] = c.maskPath(app, group, tag, v)
+		_path[i] = c.maskPath(namespace, app, group, tag, v)
 	}
 	vl, err := c.store.GetValues(_path)
 	if err != nil {
@@ -117,10 +116,10 @@ func (c configuration) Get(app, group, tag string, path []string, parser Changed
 	NewProcessor(_path, c.store).Process(parser)
 }
 
-func (configuration) maskPath(app, group, tag, path string) string {
-	key := []string{Namespace, app, group, path}
+func (configuration) maskPath(namespace, app, group, tag, path string) string {
+	key := []string{"/" + namespace, app, group, path}
 	if len(tag) > 0 {
-		key = []string{Namespace, app, group, tag, path}
+		key = []string{"/" + namespace, app, group, tag, path}
 	}
 	return strings.Join(key, "/")
 }

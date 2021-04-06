@@ -3,13 +3,16 @@ package configuration
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"github.com/Excalibur-1/gutil"
 	"io/ioutil"
 	"os"
 )
 
 const (
-	DesKey = "12345678"
+	DesKey      = "12345678"
+	Uaf         = "UAF"
+	UafFileName = "./conf/configuration.uaf"
 )
 
 // The StoreClient interface is implemented by objects that can retrieve key/value pairs from a backend store.
@@ -32,17 +35,23 @@ type WatchResponse struct {
 	Err       error
 }
 
-func NewStoreConfig() (conf StoreConfig) {
-	uaf := os.Getenv("UAF")
+// NewStoreConfig 读取配置中心配置，如果没有传递环境变量，则取默认值：UAF
+func NewStoreConfig(uafEnv string) (conf StoreConfig) {
+	var uaf string
+	if uafEnv == "" {
+		uaf = os.Getenv(Uaf)
+	} else {
+		uaf = os.Getenv(uafEnv)
+	}
 	if uaf == "" {
-		b, err := ioutil.ReadFile("./conf/configuration.uaf")
+		b, err := ioutil.ReadFile(UafFileName)
 		if err != nil {
-			panic("未找到配置管理授权文件：./conf/configuration.uaf")
+			panic("未找到配置管理授权文件：" + UafFileName)
 		}
 		uaf = string(b)
 	}
 	if uaf == "" {
-		panic("请在环境变量中配置UAF或者./conf/configuration.uaf中配置内容")
+		panic(fmt.Sprintf("请在环境变量中配置UAF或者%s中配置内容", UafFileName))
 	}
 	ds, err := base64.URLEncoding.DecodeString(uaf)
 	if err != nil {
