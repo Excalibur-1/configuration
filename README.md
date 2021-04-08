@@ -24,7 +24,7 @@ func example() {
 }
 
 ```
-上面采用默认的配置中心zk来作为配置中心使用，且 uaf内容 读取的环境变量值也是默认的：`UAF`
+上面采用默认的配置中心zk来作为配置中心使用，且 uaf内容 读取的环境变量值也是默认的
 
 3. 自定义配置
 ```go
@@ -34,7 +34,7 @@ import (
 )
 
 func example() {
-	storeCfg := configuration.NewStoreConfig("MY_UAF")
+	storeCfg := configuration.NewStoreConfig("MY_UAF", "MY_DES_KEY")
 	engine := configuration.EtcdEngine(storeCfg)
 	value, err := engine.String("myconf", "base", "cache", "", "1000")
 	if err != nil {
@@ -44,7 +44,7 @@ func example() {
 }
 
 ```
-上面是采用自定义的配置中心来读取数据，首先传入 uaf 环境变量的key，然后将读取到的配置传递给 EtcdEngine 方法获取实例
+上面是采用自定义的配置中心来读取数据，首先传入 uaf、desKey 环境变量的key，然后将读取到的配置传递给 EtcdEngine 方法获取实例
 
 4. 监听配置变更
 ```go
@@ -101,3 +101,6 @@ func (t *providerParser) Changed(data map[string]string) {
 * 代码结构调整及优化
 * 添加 readme 使用说明文档
 * 添加单元测试用例
+
+## 2021-04-08 更新日志
+* 修改uaf配置读取，将 desKey 设置为从环境变量读取，提高安全性，避免因 desKey 泄露导致的风险

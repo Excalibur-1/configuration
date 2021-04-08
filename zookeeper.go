@@ -20,11 +20,11 @@ func NewZkClient(machines []string, user, password, openUser, openPassword strin
 		panic(err)
 	}
 	if err = c.AddAuth("digest", []byte(user+":"+password)); err != nil {
-		log.Printf("AddAuth user returned error\n")
+		log.Println("AddAuth user returned error")
 	}
 	if openUser != "" {
 		if err = c.AddAuth("digest", []byte(openUser+":"+openPassword)); err != nil {
-			log.Printf("AddAuth openUser returned error")
+			log.Println("AddAuth openUser returned error")
 		}
 	}
 	cl = &zkClient{c: c}

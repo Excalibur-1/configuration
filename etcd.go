@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+const DialTimeout = time.Second * 10
+
 type etcdClient struct {
 	c *clientv3.Client
 }
@@ -14,7 +16,7 @@ type etcdClient struct {
 func NewEtcdClient(endpoints []string, username, password string) (cl *etcdClient, err error) {
 	c, err := clientv3.New(clientv3.Config{
 		Endpoints:   endpoints,
-		DialTimeout: time.Second * 5,
+		DialTimeout: DialTimeout,
 		Username:    username,
 		Password:    password,
 	})

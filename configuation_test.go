@@ -20,13 +20,13 @@ func TestMockEngine(t *testing.T) {
 }
 
 func TestZkEngine(t *testing.T) {
-	engine := ZkEngine(NewStoreConfig(""))
+	engine := ZkEngine(NewStoreConfig("", ""))
 	s, err := engine.String("myconf", "base", "cache", "", "1000")
 	fmt.Println(s, err)
 }
 
 func TestEtcdEngine(t *testing.T) {
-	engine := EtcdEngine(NewStoreConfig(""))
+	engine := EtcdEngine(NewStoreConfig("", ""))
 	s, err := engine.String("myconf", "base", "cache", "", "1000")
 	fmt.Println(s, err)
 }

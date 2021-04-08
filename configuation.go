@@ -26,7 +26,7 @@ type configuration struct {
 
 // DefaultEngine 默认采用zk配置中心且uaf环境变量设置为：UAF
 func DefaultEngine() Configuration {
-	return ZkEngine(NewStoreConfig(""))
+	return ZkEngine(NewStoreConfig("", ""))
 }
 
 // MockEngine 本地mock一个配置

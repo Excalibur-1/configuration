@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	DesKey      = "12345678"
+	DesKey      = "DES_KEY"
+	DesKeyValue = "12345678"
 	Uaf         = "UAF"
 	UafFileName = "./conf/configuration.uaf"
 )
@@ -35,13 +36,18 @@ type WatchResponse struct {
 	Err       error
 }
 
-// NewStoreConfig 读取配置中心配置，如果没有传递环境变量，则取默认值：UAF
-func NewStoreConfig(uafEnv string) (conf StoreConfig) {
-	var uaf string
+// NewStoreConfig 读取配置中心配置，如果没有传递环境变量，则取默认值
+func NewStoreConfig(uafEnv, desKeyEnv string) (conf StoreConfig) {
+	var uaf, desKey string
 	if uafEnv == "" {
 		uaf = os.Getenv(Uaf)
 	} else {
 		uaf = os.Getenv(uafEnv)
+	}
+	if desKeyEnv == "" {
+		desKey = os.Getenv(DesKey)
+	} else {
+		desKey = os.Getenv(desKeyEnv)
 	}
 	if uaf == "" {
 		b, err := ioutil.ReadFile(UafFileName)
@@ -50,6 +56,9 @@ func NewStoreConfig(uafEnv string) (conf StoreConfig) {
 		}
 		uaf = string(b)
 	}
+	if desKey == "" {
+		desKey = DesKeyValue
+	}
 	if uaf == "" {
 		panic(fmt.Sprintf("请在环境变量中配置UAF或者%s中配置内容", UafFileName))
 	}
@@ -57,7 +66,7 @@ func NewStoreConfig(uafEnv string) (conf StoreConfig) {
 	if err != nil {
 		panic("解码configuration.uaf出错")
 	}
-	data, err := gutil.Decrypt(ds, []byte(DesKey))
+	data, err := gutil.Decrypt(ds, []byte(desKey))
 	if err != nil {
 		panic("解密configuration.uaf出错")
 	}

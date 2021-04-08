@@ -36,7 +36,7 @@ func etcd() {
 	etcdChange()
 	for {
 		s, err := configuration.
-			EtcdEngine(configuration.NewStoreConfig("")).
+			EtcdEngine(configuration.NewStoreConfig("", "")).
 			String("myconf", "base", "cache", "", "provider")
 		if err != nil {
 			fmt.Println(err)
@@ -67,7 +67,7 @@ func zkChange() {
 
 func etcdChange() {
 	providerCfg = &ProviderConfig{}
-	eng := configuration.EtcdEngine(configuration.NewStoreConfig(""))
+	eng := configuration.EtcdEngine(configuration.NewStoreConfig("", ""))
 	if s, err := eng.String("myconf", "base", "cache", "", "provider"); err != nil {
 		_ = json.Unmarshal([]byte(s), providerCfg)
 	}
